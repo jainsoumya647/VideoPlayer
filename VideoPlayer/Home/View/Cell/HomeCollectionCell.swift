@@ -9,13 +9,14 @@
 import UIKit
 import Combine
 
+@available(iOS 13.0, *)
 class HomeCollectionCell: ReusableCollectionViewCell {
 
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var titleLabel: UILabel!
     
-//    private var animator: UIViewPropertyAnimator?
-//    private var cancellable: AnyCancellable?
+    private var animator: UIViewPropertyAnimator?
+    private var cancellable: AnyCancellable?
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -26,33 +27,35 @@ class HomeCollectionCell: ReusableCollectionViewCell {
         self.imageView.setCornerRadius()
     }
 
-//    override func prepareForReuse() {
-//        print("prepareForReuse")
-//        super.prepareForReuse()
-//        self.imageView.image = nil
-//        self.imageView.alpha = 0.0
-//        self.animator?.stopAnimation(true)
-//        self.cancellable?.cancel()
-//    }
-    
-    func configureCell(node: Node) {
-        self.loadImage(for: node.getImageURL())
+    override func prepareForReuse() {
+        print("prepareForReuse")
+        super.prepareForReuse()
+        self.imageView.image = nil
+        self.imageView.alpha = 0.0
+        self.animator?.stopAnimation(true)
+        self.cancellable?.cancel()
     }
     
-//    private func showImage(image: UIImage?) {
-//        print("showImage")
-//        self.imageView.alpha = 0.0
-//        animator?.stopAnimation(false)
-//        self.imageView.image = image
-//        self.imageView.alpha = 1.0
-//    }
-    
-    private func loadImage(for movieURL: String) {
-        guard let url = URL(string: movieURL) else { return }
-        return ImageLoader.shared.loadThumbnailImage(from: url) { (image) in
-            DispatchQueue.main.async {
-                self.imageView.image = image
-            }
+    func configureCell(node: Node) {
+        self.cancellable = self.loadImage(for: node.getImageURL()).sink { (image) in
+            self.showImage(image: image)
         }
+    }
+    
+    private func showImage(image: UIImage?) {
+        print("showImage")
+        self.imageView.alpha = 0.0
+        self.animator?.stopAnimation(false)
+        self.imageView.image = image
+        self.imageView.alpha = 1.0
+    }
+    
+    private func loadImage(for movieURL: String) -> AnyPublisher<UIImage?, Never> {
+        return Just(movieURL)
+        .flatMap({ poster -> AnyPublisher<UIImage?, Never> in
+            let url = URL(string: movieURL)!
+            return ImageLoader.shared.loadThumbnailImage(from: url)
+        })
+        .eraseToAnyPublisher()
     }
 }
