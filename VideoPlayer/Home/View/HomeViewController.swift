@@ -15,7 +15,7 @@ class HomeViewController: UIViewController {
     
     private var viewModel: HomeViewModel!
     private let playerViewController = AVPlayerViewController()
-    private var player = AVPlayer()
+    private var player: AVPlayer?
     
     private var playerViewModel: HomeTableCellViewModel!
     private var selectedIndex: Int = 0
@@ -93,12 +93,21 @@ extension HomeViewController: HomeTableCellDelegate {
                 self.playerViewController.view.subviews[0].gestureRecognizers?.remove(at: positions[positions.count-index-1])
             }
             self.addGestures()
-            self.player.play()
+            self.player?.play()
         }
     }
     
     @objc func swipeRight(gesture: UIGestureRecognizer) {
-        self.dismiss(animated: true, completion: nil)
+        self.player?.pause()
+        self.player = nil
+        self.playerViewController.player = nil
+        let transition = CATransition()
+        transition.duration = 0.5
+        transition.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeInEaseOut)
+        transition.type = CATransitionType.push
+        transition.subtype = CATransitionSubtype.fromLeft
+        UIApplication.shared.keyWindow?.layer.add(transition, forKey: nil)
+        self.dismiss(animated: false, completion: nil)
     }
     
     @objc func swipeDown(gesture: UIGestureRecognizer) {
@@ -116,10 +125,10 @@ extension HomeViewController: HomeTableCellDelegate {
     }
     
     private func playVideo(url: URL) {
-        self.player.pause()
+        self.player?.pause()
         self.player = AVPlayer(url: url)
         self.playerViewController.player = self.player
-        self.player.play()
+        self.player?.play()
     }
     
     private func addGestures() {
